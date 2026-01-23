@@ -24,8 +24,13 @@ def limit_say(text: str) -> str:
     return cut + " …"
 
 def is_wake(text: str) -> bool:
-    t = (text or "").lower()
-    return ("tiago" in t) and (("bonjour" in t) or ("salut" in t) or ("hey" in t))
+    t = (text or "").lower().strip()
+    if not t:
+        return False
+    # Vérifier si "tiago" est présent ET un mot de salutation
+    has_tiago = "tiago" in t
+    has_greeting = any(word in t for word in ["bonjour", "salut", "hey", "bonsoir", "coucou"])
+    return has_tiago and has_greeting
 
 def run():
     llm = OllamaClient(base_url="http://127.0.0.1:11434", model="mistral:latest")
@@ -36,16 +41,22 @@ def run():
 
     while True:
         # ---- WAKE MODE ----
-        heard = stt.listen(seconds=3.0)
-        if DEBUG:
-            if heard:
-                print(f"[STT-WAKE] Entendu: {heard!r}")
-            else:
-                print("[STT-WAKE] (silence ou trop faible)")
+        print("🎤 Écoute en cours... (dites 'Bonjour Tiago')")
+        heard = stt.listen(seconds=3.0, skip_volume_check=False)
+        
+        # Afficher toujours ce qui est détecté (même si vide)
+        if heard:
+            print(f"[STT-WAKE] Entendu: {heard!r}")
+        else:
+            if DEBUG:
+                print("[STT-WAKE] (silence ou volume trop faible - parlez plus fort)")
 
         if not heard or len(heard.strip()) < 2:
             continue
 
+        # Debug: afficher ce qui a été entendu
+        print(f"📢 Texte détecté: '{heard}'")
+        
         # Vérifier si c'est le wake word
         if is_wake(heard):
             if DEBUG:
