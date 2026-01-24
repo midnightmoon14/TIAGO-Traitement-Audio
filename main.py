@@ -24,102 +24,156 @@ def limit_say(text: str) -> str:
     return cut + " …"
 
 def is_wake(text: str) -> bool:
+    """
+    Wake word plus permissif: juste "tiago" suffit maintenant
+    (ou "tiago" + mot de salutation)
+    """
     t = (text or "").lower().strip()
     if not t:
         return False
-    # Vérifier si "tiago" est présent ET un mot de salutation
-    has_tiago = "tiago" in t
-    has_greeting = any(word in t for word in ["bonjour", "salut", "hey", "bonsoir", "coucou"])
-    return has_tiago and has_greeting
+    
+    # Accepter juste "tiago" ou "tiago" avec salutation
+    if "tiago" in t:
+        return True
+    
+    # Variantes courantes
+    wake_words = ["bonjour tiago", "salut tiago", "hey tiago", "coucou tiago", 
+                  "bonsoir tiago", "allo tiago", "ok tiago"]
+    return any(w in t for w in wake_words)
 
 def run():
-    llm = OllamaClient(base_url="http://127.0.0.1:11434", model="mistral:latest")
+    # OPTION 1: Mistral 7B (plus rapide, toujours bon en français)
+    llm = OllamaClient(base_url="http://127.0.0.1:11434", model="mistral:7b")
+    
+    # OPTION 2: Si vous voulez encore plus rapide, essayez Phi-3 mini
+    # llm = OllamaClient(base_url="http://127.0.0.1:11434", model="phi3:mini")
+    
+    # OPTION 3: Pour garder mistral:latest (mais plus lent)
+    # llm = OllamaClient(base_url="http://127.0.0.1:11434", model="mistral:latest")
+    
     stt = STT(model_size="small", device="cpu", compute_type="int8")
     tts = TTS(rate=175)
 
-    print("✅ TIAGO prêt. Dis: 'Bonjour Tiago' pour commencer.")
+    print("=" * 60)
+    print("🤖 TIAGO - Assistant vocal CESI")
+    print("=" * 60)
+    
+    # CALIBRATION AUTOMATIQUE AU DÉMARRAGE
+    stt.calibrate_volume(duration=3.0)
+    
+    print("✅ TIAGO est prêt !")
+    print("💡 Dites 'Bonjour Tiago' ou 'Hey Tiago' pour commencer.\n")
 
     while True:
         # ---- WAKE MODE ----
-        print("🎤 Écoute en cours... (dites 'Bonjour Tiago')")
-        heard = stt.listen(seconds=3.0, skip_volume_check=False)
+        print("🎤 En attente du wake word...")
+        heard = stt.listen(seconds=3.0, skip_volume_check=False, show_volume=DEBUG)
         
-        # Afficher toujours ce qui est détecté (même si vide)
         if heard:
-            print(f"[STT-WAKE] Entendu: {heard!r}")
-        else:
-            if DEBUG:
-                print("[STT-WAKE] (silence ou volume trop faible - parlez plus fort)")
-
+            print(f"👂 Détecté: '{heard}'")
+        
         if not heard or len(heard.strip()) < 2:
             continue
 
-        # Debug: afficher ce qui a été entendu
-        print(f"📢 Texte détecté: '{heard}'")
-        
         # Vérifier si c'est le wake word
         if is_wake(heard):
-            if DEBUG:
-                print(f"[WAKE] Détection: {heard}")
-            print("🔊 Wake word détecté ! Démarrage de la conversation...")
+            print(f"✅ Wake word détecté: '{heard}'")
+            print("🚀 Démarrage de la conversation...\n")
             
-            # ---- Start conversation ----
+            # IMPORTANT: petite pause avant que Tiago parle
+            time.sleep(0.5)
+            
             tts.say("Bonjour ! Je suis Tiago. Je peux vous aider à trouver la formation CESI la plus adaptée. Qu'est-ce que vous recherchez ?")
-            time.sleep(1.0)  # évite que le micro capte la fin de la voix
+            
+            # CRUCIAL: attendre que le TTS finisse + 2 secondes de pause
+            # pour éviter que le micro capte la fin de la voix de Tiago
+            time.sleep(2.0)
 
             history: List[Dict[str, str]] = []
+            conversation_active = True
 
-            while True:
-                # Écoute pendant la conversation
-                user = stt.listen(seconds=8.0)  # Augmenté pour avoir plus de temps pour parler
-                if DEBUG:
-                    if user:
-                        print(f"[STT-USER] Entendu: {user!r}")
-                    else:
-                        print("[STT-USER] (silence ou trop faible)")
+            while conversation_active:
+                print("\n🎤 À vous de parler (vous avez 8 secondes)...")
+                
+                # Écoute avec feedback visuel
+                user = stt.listen(seconds=8.0, show_volume=DEBUG)
+                
+                if user:
+                    print(f"✅ Vous avez dit: '{user}'\n")
+                else:
+                    print("⚠️  Rien détecté ou volume trop faible")
 
-                if not user or len(user.strip()) < 2:
-                    if DEBUG:
-                        print("[STT-USER] Texte trop court ou vide, demande de répéter")
-                    tts.say("Je n'ai pas bien entendu. Pouvez-vous répéter, un peu plus près du micro ?")
-                    time.sleep(1.0)
+                # Si silence ou texte trop court
+                if not user or len(user.strip()) < 3:
+                    print("⚠️  Texte trop court, je demande de répéter...\n")
+                    tts.say("Je n'ai pas bien entendu. Pouvez-vous répéter un peu plus fort ?")
+                    time.sleep(2.0)  # Pause après TTS
                     continue
 
-                print(f"\n[USER] {user}")
+                print(f"[USER] {user}")
                 history.append({"role": "user", "content": user})
 
+                # Appel au LLM avec DEBUG DÉTAILLÉ
                 try:
+                    print("🔄 Envoi au LLM Mistral...")
+                    print(f"   📝 Historique: {len(history)} messages")
+                    
                     obj = llm.chat_json(SYSTEM_PROMPT, history, temperature=0.2)
+                    
+                    print(f"✅ Réponse LLM reçue: {obj}")
+                    print("🔍 Validation en cours...")
+                    
                     validate(obj)
+                    
+                    print("✅ Validation OK")
                     dprint("[LLM-JSON]", obj)
+                    
                 except Exception as e:
-                    print("❌ erreur LLM/JSON:", e)
-                    tts.say("Désolé, je n'ai pas bien compris. Pouvez-vous reformuler en précisant votre niveau et ce que vous cherchez ?")
-                    time.sleep(0.8)
+                    print(f"❌ ERREUR DÉTAILLÉE:")
+                    print(f"   Type: {type(e).__name__}")
+                    print(f"   Message: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    
+                    tts.say("Désolé, j'ai eu un problème technique. Pouvez-vous reformuler ?")
+                    time.sleep(2.0)
                     continue
 
-                # Speak (limité 15s)
+                # Préparer la réponse
                 say = limit_say(obj.get("say", ""))
                 if not say:
-                    # sécurité si le modèle renvoie un say vide
                     say = "D'accord. Pouvez-vous préciser votre niveau actuel et votre objectif ?"
 
-                print(f"[TIAGO] {say}")
+                print(f"[TIAGO] {say}\n")
                 tts.say(say)
-                time.sleep(1.0)  # Pause après avoir parlé avant d'écouter à nouveau
+                
+                # CRUCIAL: pause après chaque réponse de Tiago
+                time.sleep(2.0)
 
-                # Historique assistant (on stocke le JSON stringifié)
+                # Historique assistant
                 history.append({"role": "assistant", "content": str(obj)})
 
-                # Done => dataset final
+                # Vérifier si terminé
                 if obj.get("done") is True and obj.get("dataset") is not None:
-                    print("\n=== DATASET FINAL ===")
+                    print("\n" + "=" * 60)
+                    print("📊 DATASET FINAL")
+                    print("=" * 60)
                     print(obj["dataset"])
-                    print("=====================\n")
+                    print("=" * 60 + "\n")
+                    
                     tts.say("Merci ! Bonne visite au CESI Bordeaux. À bientôt !")
-                    time.sleep(1.0)
-                    print("\n🔄 Retour au mode veille. Dites 'Bonjour Tiago' pour recommencer.\n")
-                    break  # Sort de la boucle de conversation, retour au wake mode
+                    time.sleep(2.0)
+                    
+                    print("🔄 Retour au mode veille.")
+                    print("💡 Dites 'Bonjour Tiago' pour recommencer.\n")
+                    conversation_active = False
+                    break
 
 if __name__ == "__main__":
-    run()
+    try:
+        run()
+    except KeyboardInterrupt:
+        print("\n\n👋 Arrêt de Tiago. À bientôt !")
+    except Exception as e:
+        print(f"\n❌ Erreur fatale: {e}")
+        raise
