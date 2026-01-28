@@ -8,7 +8,7 @@ class OllamaClient:
     def __init__(
         self,
         base_url: str = "http://127.0.0.1:11434",
-        model: str = "tiago-cesi"
+        model: str = "tiago-simple"  # ✅ CHANGEMENT 1: Utilise le modèle léger
     ):
         """
         Client Ollama pour LLM local.
@@ -32,6 +32,11 @@ class OllamaClient:
         """
         Envoie l'historique au modèle et retourne UNE réponse texte courte.
         """
+        # ✅ CHANGEMENT 2: Limite l'historique à 6 messages max
+        if len(history) > 6:
+            # Garde le system prompt (index 0) + les 5 derniers messages
+            history = [history[0]] + history[-5:]
+        
         payload: Dict[str, Any] = {
             "model": self.model,
             "messages": history,
@@ -39,7 +44,7 @@ class OllamaClient:
             "keep_alive": "10m",
             "options": {
                 "temperature": temperature,
-                "num_predict": 80,        # réponses courtes
+                "num_predict": 60,        # ✅ CHANGEMENT 3: Réduit de 80 à 60 pour plus rapide
                 "top_p": 0.9,
                 "repeat_penalty": 1.25,
                 "num_ctx": 1024
@@ -52,7 +57,7 @@ class OllamaClient:
             print(f"   Messages: {len(history)}")
             print(f"   Dernier message: {history[-1]['content']}")
 
-        timeout = 180 if not self._warmed else 60
+        timeout = 120 if not self._warmed else 45  # ✅ CHANGEMENT 4: Timeout réduit à 45s après warmup
 
         r = requests.post(
             f"{self.base_url}/api/chat",
