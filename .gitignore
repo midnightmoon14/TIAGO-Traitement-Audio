@@ -48,3 +48,20 @@ desktop.ini
 # Fichiers temporaires
 *.tmp
 *.temp
+
+
+# Environnements
+.venv/
+__pycache__/
+
+# Modèles lourds
+models/
+*.ollama
+
+# Audio / logs
+*.wav
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
