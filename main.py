@@ -32,7 +32,7 @@ def build_json(say: str, done: bool = False, ask_confirmation: bool = False,
         "done": done,
         "ask_confirmation": ask_confirmation,
         "proposed": proposed,
-        "int": formation_id if done else None,  # ✅ int uniquement si done=True
+        "int": formation_id if done else None ,  
         "handoff": handoff
     }
     
@@ -278,30 +278,5 @@ if __name__ == "__main__":
         run()
     except KeyboardInterrupt:
         print("\n👋 Arrêt de Tiago. À bientôt !")
-```
 
-**Les changements :**
 
-1. ✅ Ligne 29 : `"int": formation_id if done else None` - Le `int` n'est rempli **que** si `done=True`
-2. ✅ Ligne 173 : `final_formation_id = None` - Variable pour stocker l'ID final
-3. ✅ Ligne 192 : `final_formation_id = formation_proposed` - Sauvegarde l'ID quand la conversation se termine
-4. ✅ Ligne 276-278 : Affichage et `return` de l'ID final
-
-**Résultat :**
-```
-📄 JSON: {
-  "say": "Génial ! Je vous accompagne. Bonne visite !",
-  "done": true,
-  "ask_confirmation": false,
-  "proposed": {
-    "label": "Programme Grande Ecole",
-    "couleur": "jaune"
-  },
-  "int": 1,
-  "handoff": false
-}
-🤖 TIAGO : Génial ! Je vous accompagne. Bonne visite !
-
-✅ Conversation terminée, retour en veille
-
-🎯 FORMATION FINALE : 1 - Programme Grande Ecole
