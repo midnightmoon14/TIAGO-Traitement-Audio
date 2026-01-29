@@ -2,7 +2,8 @@ from typing import List, Dict, Optional
 import json
 
 from tiago_assistant.ollama_client import OllamaClient
-from tiago_assistant.stt_micro_only import listen_from_micro
+# from tiago_assistant.stt_micro_only import listen_from_micro
+from tiago_assistant.stt import listen_from_micro
 
 
 # Mapping des formations
