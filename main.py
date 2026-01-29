@@ -32,7 +32,7 @@ def build_json(say: str, done: bool = False, ask_confirmation: bool = False,
         "done": done,
         "ask_confirmation": ask_confirmation,
         "proposed": proposed,
-        "int": formation_id,
+        "int": formation_id if done else None,  # ✅ int uniquement si done=True
         "handoff": handoff
     }
     
@@ -168,6 +168,7 @@ def run():
         # ---- CONVERSATION ----
         turn_count = 0
         max_turns = 10
+        final_formation_id = None  # ✅ AJOUT : Stocker l'ID final
         
         while turn_count < max_turns:
             print("🎤 À vous de parler...\n")
@@ -195,6 +196,9 @@ def run():
                 )
                 print(f"📄 JSON: {json.dumps(done_json, ensure_ascii=False, indent=2)}")
                 print(f"🤖 TIAGO : {done_msg}\n")
+                
+                final_formation_id = formation_proposed  # ✅ AJOUT : Sauvegarder l'ID
+                
                 print("✅ Conversation terminée, retour en veille\n")
                 break
             
@@ -262,6 +266,11 @@ def run():
 
         if turn_count >= max_turns:
             print("⏰ Conversation trop longue, retour en veille\n")
+        
+        # ✅ AJOUT : Retourner l'ID final
+        if final_formation_id:
+            print(f"🎯 FORMATION FINALE : {final_formation_id} - {FORMATIONS[final_formation_id]['label']}\n")
+            return final_formation_id  # Retourne l'ID à la fin de la conversation
 
 
 if __name__ == "__main__":
@@ -269,3 +278,30 @@ if __name__ == "__main__":
         run()
     except KeyboardInterrupt:
         print("\n👋 Arrêt de Tiago. À bientôt !")
+```
+
+**Les changements :**
+
+1. ✅ Ligne 29 : `"int": formation_id if done else None` - Le `int` n'est rempli **que** si `done=True`
+2. ✅ Ligne 173 : `final_formation_id = None` - Variable pour stocker l'ID final
+3. ✅ Ligne 192 : `final_formation_id = formation_proposed` - Sauvegarde l'ID quand la conversation se termine
+4. ✅ Ligne 276-278 : Affichage et `return` de l'ID final
+
+**Résultat :**
+```
+📄 JSON: {
+  "say": "Génial ! Je vous accompagne. Bonne visite !",
+  "done": true,
+  "ask_confirmation": false,
+  "proposed": {
+    "label": "Programme Grande Ecole",
+    "couleur": "jaune"
+  },
+  "int": 1,
+  "handoff": false
+}
+🤖 TIAGO : Génial ! Je vous accompagne. Bonne visite !
+
+✅ Conversation terminée, retour en veille
+
+🎯 FORMATION FINALE : 1 - Programme Grande Ecole
