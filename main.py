@@ -4,6 +4,7 @@ import json
 from tiago_assistant.ollama_client import OllamaClient
 # from tiago_assistant.stt_micro_only import listen_from_micro
 from tiago_assistant.stt import listen_from_micro
+from tiago_assistant.say_audio import say_text
 
 
 # Mapping des formations
@@ -161,6 +162,7 @@ def run():
         # Message d'accueil
         greeting = "Bonjour ! Je suis Tiago. Quel est votre projet de formation aujourd'hui ?"
         greeting_json = build_json(greeting)
+        say_text(greeting)
         
         print(f"📄 JSON: {json.dumps(greeting_json, ensure_ascii=False, indent=2)}")
         # print(f"🤖 TIAGO : {greeting}\n")
@@ -195,6 +197,7 @@ def run():
                     done=True,
                     formation_id=formation_proposed
                 )
+                say_text(done_msg)
                 print(f"📄 JSON: {json.dumps(done_json, ensure_ascii=False, indent=2)}")
                 # print(f"🤖 TIAGO : {done_msg}\n")
                 
@@ -213,6 +216,7 @@ def run():
             if needs_handoff(user):
                 handoff_msg = "L'équipe sur place pourra vous en dire plus sur ce point !"
                 handoff_json = build_json(handoff_msg, handoff=True)
+                say_text(handoff_msg)
                 print(f"📄 JSON: {json.dumps(handoff_json, ensure_ascii=False, indent=2)}")
                 # print(f"🤖 TIAGO : {handoff_msg}\n")
                 history.append({"role": "assistant", "content": handoff_msg})
@@ -228,6 +232,7 @@ def run():
                 print("❌ Problème LLM :", e)
                 error_msg = "Désolé, pouvez-vous reformuler ?"
                 error_json = build_json(error_msg)
+                say_text(error_msg)
                 
                 print(f"📄 JSON: {json.dumps(error_json, ensure_ascii=False, indent=2)}")
                 # print(f"🤖 TIAGO : {error_msg}\n")
@@ -247,6 +252,7 @@ def run():
                     ask_confirmation=True,
                     formation_id=formation_id
                 )
+                say_text(propose_msg)
                 
                 print(f"📄 JSON: {json.dumps(propose_json, ensure_ascii=False, indent=2)}")
                 # print(f"🤖 TIAGO : {propose_msg}\n")
@@ -259,6 +265,7 @@ def run():
             
             # Réponse normale
             response_json = build_json(say=response)
+            say_text(response)
             
             print(f"📄 JSON: {json.dumps(response_json, ensure_ascii=False, indent=2)}")
             # print(f"🤖 TIAGO : {response}\n")
