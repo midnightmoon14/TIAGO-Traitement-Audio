@@ -162,7 +162,7 @@ def run():
         greeting_json = build_json(greeting)
         
         print(f"📄 JSON: {json.dumps(greeting_json, ensure_ascii=False, indent=2)}")
-        print(f"🤖 TIAGO : {greeting}\n")
+        # print(f"🤖 TIAGO : {greeting}\n")
         history.append({"role": "assistant", "content": greeting})
 
         # ---- CONVERSATION ----
@@ -195,7 +195,7 @@ def run():
                     formation_id=formation_proposed
                 )
                 print(f"📄 JSON: {json.dumps(done_json, ensure_ascii=False, indent=2)}")
-                print(f"🤖 TIAGO : {done_msg}\n")
+                # print(f"🤖 TIAGO : {done_msg}\n")
                 
                 final_formation_id = formation_proposed  # ✅ AJOUT : Sauvegarder l'ID
                 
@@ -213,7 +213,7 @@ def run():
                 handoff_msg = "L'équipe sur place pourra vous en dire plus sur ce point !"
                 handoff_json = build_json(handoff_msg, handoff=True)
                 print(f"📄 JSON: {json.dumps(handoff_json, ensure_ascii=False, indent=2)}")
-                print(f"🤖 TIAGO : {handoff_msg}\n")
+                # print(f"🤖 TIAGO : {handoff_msg}\n")
                 history.append({"role": "assistant", "content": handoff_msg})
                 turn_count += 1
                 continue
@@ -229,7 +229,7 @@ def run():
                 error_json = build_json(error_msg)
                 
                 print(f"📄 JSON: {json.dumps(error_json, ensure_ascii=False, indent=2)}")
-                print(f"🤖 TIAGO : {error_msg}\n")
+                # print(f"🤖 TIAGO : {error_msg}\n")
                 turn_count += 1
                 continue
 
@@ -248,7 +248,7 @@ def run():
                 )
                 
                 print(f"📄 JSON: {json.dumps(propose_json, ensure_ascii=False, indent=2)}")
-                print(f"🤖 TIAGO : {propose_msg}\n")
+                # print(f"🤖 TIAGO : {propose_msg}\n")
                 history.append({"role": "assistant", "content": propose_msg})
                 
                 formation_proposed = formation_id
@@ -260,7 +260,7 @@ def run():
             response_json = build_json(say=response)
             
             print(f"📄 JSON: {json.dumps(response_json, ensure_ascii=False, indent=2)}")
-            print(f"🤖 TIAGO : {response}\n")
+            # print(f"🤖 TIAGO : {response}\n")
             history.append({"role": "assistant", "content": response})
             turn_count += 1
 
